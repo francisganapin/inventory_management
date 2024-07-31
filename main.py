@@ -84,6 +84,9 @@ class MyApp(QtWidgets.QWidget):
 
 
     def remove_item(self):
+        """delete data on the tree view"""
+        #https://www.reddit.com/r/learnpython/comments/6723eq/deleting_selected_items_from_the_treeview_and/ <-this one is souce that i use
+        
         current_directory = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(current_directory, 'database.db')
 
@@ -93,7 +96,7 @@ class MyApp(QtWidgets.QWidget):
         selected_items = self.tableView.selectionModel().selectedRows()
 
         self.mask = []
-        
+
         for selected_item in selected_items:
             row_index = selected_item.row()
 
