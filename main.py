@@ -25,6 +25,7 @@ class MyApp(QtWidgets.QWidget):
             self.show_data()
             self.save_bt.clicked.connect(self.insert_data)
             self.refresh_bt.clicked.connect(self.show_data)
+            self.search_bt.clicked.connect(self.search_data)
             
         except FileNotFoundError:
                 print("ok")
@@ -78,6 +79,47 @@ class MyApp(QtWidgets.QWidget):
             QMessageBox.warning(self, "Duplicate Id", f"An entry with ID {name} is already exists.")
         finally:
             conn.close()
+
+
+
+
+
+    def search_data(self):
+        """
+        Search the data in the second tab. 
+        You can choose to search by name or ID.
+        """
+        search_name = self.search_name_input.text()
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(current_directory, 'database.db')
+        conn = sqlite3.connect(file_path)
+        cursor = conn.cursor()
+
+        query = "SELECT id,name,brand,color,date,category,quantity,description Address FROM products WHERE 1=1"
+        params = []
+
+        if search_name:
+            query += " AND Name LIKE ?"
+            params.append(f"%{search_name}%")
+
+        try:
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+            self.model_stock.removeRows(0, self.model_stock.rowCount())  # Clear the model
+
+            for row_data in rows:
+                items = [QStandardItem(str(data)) for data in row_data]
+                self.model_stock.appendRow(items)
+
+            print('Search Results Fetched Successfully')
+        except sqlite3.Error as e:
+            print(f'Sqlite error: {e}')
+        finally:
+            conn.close()
+
+
+
 
 
 
