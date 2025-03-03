@@ -10,7 +10,7 @@ import os
 import sqlite3
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QDate
-
+from PyQt6.QtCore import QTimer
 
 
 
@@ -29,7 +29,10 @@ class MyApp(QtWidgets.QWidget):
             self.model_stock = QStandardItemModel()
             self.model_stock.setHorizontalHeaderLabels(['Id','Name','Brand','Color','Date','Category','Quantity'])
             self.tableView.setModel(self.model_stock)
+
             self.show_data()
+
+            
             self.save_bt.clicked.connect(self.insert_data)
             self.refresh_bt.clicked.connect(self.show_data)
             self.search_bt.clicked.connect(self.search_data)
@@ -40,14 +43,7 @@ class MyApp(QtWidgets.QWidget):
 
 
 
-            self.name=self.name_input.text()
-            self.brand=self.brand_input.currentText()
-            self.color=self.color_input.currentText()
-            self.date=self.date_input.text()
-            self.catergory=self.category_input.currentText()
-            #USE VALUE IF YOU  USE SPINBOX
-            self.quantity = self.quantity_input.value()
-            #USE TOplaintext if you use  qtextbrowser
+        
 
 
 
@@ -80,7 +76,15 @@ class MyApp(QtWidgets.QWidget):
             conn.close()
 
     def insert_data(self):
-         
+
+        self.name=self.name_input.text()
+        self.brand=self.brand_input.currentText()
+        self.color=self.color_input.currentText()
+        self.date=self.date_input.text()
+        self.catergory=self.category_input.currentText()
+        #USE VALUE IF YOU  USE SPINBOX
+        self.quantity = self.quantity_input.value()
+        #USE TOplaintext if you use  qtextbrowser
         
         current_directory = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(current_directory,'database.db')
@@ -93,7 +97,8 @@ class MyApp(QtWidgets.QWidget):
                         VALUES(?,?,?,?,?,?)''', 
                         (self.name,self.brand,self.color, self.date,self.catergory,self.quantity))
             conn.commit()
-            self.validator_label.setText(f"subject_value: data was successfully input")
+            self.validator_label.setText(f"{self.name} data was successfully input")
+            QTimer.singleShot(3000, lambda: self.validator_label.clear())
         except sqlite3.IntegrityError:
            
             conn.close()
@@ -122,7 +127,8 @@ class MyApp(QtWidgets.QWidget):
 
             # Print subject_value to debug its content
             print(f"subject_value: {subject_value}")
-            self.validator_label.setText(f"subject_value: {subject_value} was delete")
+            self.validator_label.setText(f"Item {subject_value} was delete")
+            QTimer.singleShot(3000, lambda: self.validator_label.clear())
             # Remove the corresponding item from self.mask
             for i, mask in enumerate(self.mask):
                 if mask.subject == subject_value:
@@ -164,6 +170,7 @@ class MyApp(QtWidgets.QWidget):
             print(text)
             print(f"subject_value: {subject_value}")
             self.validator_label.setText(f"subject_value: {subject_value}")
+            QTimer.singleShot(3000, lambda: self.validator_label.clear())
             # Remove the corresponding item from self.mask
            
 
@@ -212,6 +219,7 @@ class MyApp(QtWidgets.QWidget):
 
             print('Search Results Fetched Successfully')
             self.validator_label.setText('Search Results Fetched Successfully')
+            QTimer.singleShot(3000, lambda: self.validator_label.clear())
         except sqlite3.Error as e:
             print(f'Sqlite error: {e}')
         finally:
@@ -245,9 +253,7 @@ class MyApp(QtWidgets.QWidget):
 
     def update_data(self):
 
-        # Fetch the current item ID
-        item_id = self.item[0]
-
+         
         # Fetch updated values directly from the input widgets
         name = self.name_input.text()
         brand = self.brand_input.currentText()
@@ -256,27 +262,44 @@ class MyApp(QtWidgets.QWidget):
         category = self.category_input.currentText()
         quantity = self.quantity_input.value()
 
+
+
+
         # Prepare the database connection
         current_directory = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(current_directory, 'database.db')
         conn = sqlite3.connect(file_path)
         cursor = conn.cursor()
 
+
+
+        selected_items = self.tableView.selectionModel().selectedRows()
+
+        self.mask = [] 
+
+        for selected_item in selected_items:
+            row_index = selected_item.row()
+
+            # Get the value of the first column in the selected row
+            subject_value = self.tableView.model().index(row_index, 0).data()
+
+            
+
         try:
             cursor.execute('''UPDATE products
                             SET name = ?, brand = ?, color = ?, date = ?, category = ?, quantity = ?
                             WHERE id = ?''', 
-                            (name, brand, color, date, category, quantity, item_id))
+                            (name, brand, color, date, category, quantity, subject_value))
             conn.commit()
             print('Data updated successfully.')
             self.validator_label.setText('Data updated successfully. click reshresh now')
+            QTimer.singleShot(3000, lambda: self.validator_label.clear())
         except sqlite3.IntegrityError as e:
             print(f'SQLite integrity error: {e}')
         finally:
             conn.close()
 
-    
-    
+
 
 if __name__ == "__main__":
      app = QApplication(sys.argv)
